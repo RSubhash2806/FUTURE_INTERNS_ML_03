@@ -1,5 +1,5 @@
-
 from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -7,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import nltk
 import logging
+import os
 
 # Download necessary NLTK data
 nltk.download("punkt")
@@ -50,14 +51,21 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Pydantic model for request validation
+# Serve index.html at root URL
+@app.get("/", response_class=HTMLResponse)
+async def read_index():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+# Request model
 class Query(BaseModel):
     question: str
 
-# TF-IDF setup for question matching
+# TF-IDF setup
 vectorizer = TfidfVectorizer()
 tfidf_matrix = vectorizer.fit_transform(faq_data["questions"])
 
+# Chat endpoint
 @app.post("/chat/")
 def get_answer(query: Query):
     user_question = query.question.strip()
